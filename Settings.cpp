@@ -481,7 +481,7 @@ void SoapySDRPlay::setGain(const int direction, const size_t channel, const doub
         case GAIN_IFGR_ONLY:
             setGain(direction, channel, "IFGR", value);
             break;
-        case GAIN_IFGR_ONLY:
+        case GAIN_DEFAULT:
         default:
             SoapySDR::Device::setGain(direction, channel, value);
             break;
@@ -540,6 +540,7 @@ double SoapySDRPlay::getGain(const int direction, const size_t channel) const
         case GAIN_IFGR_ONLY:
             return getGain(direction, channel, "IFGR");
             break;
+        case GAIN_DEFAULT:
         default:
             return SoapySDR::Device::getGain(direction, channel);
             break;
@@ -569,6 +570,7 @@ SoapySDR::Range SoapySDRPlay::getGainRange(const int direction, const size_t cha
         case GAIN_IFGR_ONLY:
             return getGainRange(direction, channel, "IFGR");
             break;
+        case GAIN_DEFAULT:
         default:
             return SoapySDR::Device::getGainRange(direction, channel);
             break;
