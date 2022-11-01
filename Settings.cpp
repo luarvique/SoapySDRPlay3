@@ -535,7 +535,7 @@ void SoapySDRPlay::setGain(const int direction, const size_t channel, const std:
    {
       gr_changed = 0;
 
-      sdrplay_api_ErrT err = sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Tuner_Gr, sdrplay_api_Update_Ext1_None);
+      sdrplay_api_ErrT err = tryUpdate(sdrplay_api_Update_Tuner_Gr);
       if (err != sdrplay_api_Success)
       {
          SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(Tuner_Gr) Error: %s", sdrplay_api_GetErrorString(err));
@@ -656,7 +656,7 @@ void SoapySDRPlay::setFrequency(const int direction,
          {
             rf_changed = 0;
 
-            sdrplay_api_ErrT err = sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Tuner_Frf, sdrplay_api_Update_Ext1_None);
+            sdrplay_api_ErrT err = tryUpdate(sdrplay_api_Update_Tuner_Frf);
             if (err != sdrplay_api_Success)
             {
                SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(Tuner_FrF) Error: %s", sdrplay_api_GetErrorString(err));
@@ -818,12 +818,14 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
              // 2,685,312 and 2,685,313 the rx_callbacks stop for some
              // reason
              fs_changed = 0;
-             sdrplay_api_ErrT err = sdrplay_api_Update(device.dev, device.tuner, reasonForUpdate, sdrplay_api_Update_Ext1_None);
+
+             sdrplay_api_ErrT err = tryUpdate(reasonForUpdate);
              if (err != sdrplay_api_Success)
              {
                  SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(%08x) Error: %s", reasonForUpdate, sdrplay_api_GetErrorString(err));
                  return;
              }
+
              if (waitForUpdate)
              {
                 for (int i = 0; (i < updateTimeout) && (fs_changed == 0) ; ++i)
@@ -1444,7 +1446,7 @@ void SoapySDRPlay::writeSetting(const std::string &key, const std::string &value
       {
          gr_changed = 0;
 
-         sdrplay_api_ErrT err = sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Tuner_Gr, sdrplay_api_Update_Ext1_None);
+         sdrplay_api_ErrT err = tryUpdate(sdrplay_api_Update_Tuner_Gr);
          if (err != sdrplay_api_Success)
          {
             SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(Tuner_Gr) Error: %s", sdrplay_api_GetErrorString(err));
@@ -1974,4 +1976,24 @@ void SoapySDRPlay::waitForDevice(int msec)
     _general_state_mutex.unlock();
     std::this_thread::sleep_for(std::chrono::milliseconds(msec));
     _general_state_mutex.lock();
+}
+
+sdrplay_api_ErrT SoapySDRPlay::tryUpdate(sdrplay_api_ReasonForUpdateT reasonForUpdate)
+{
+    sdrplay_api_ErrT err;
+
+    for (int i = 0 ; i < retryCount; ++i)
+    {
+        err = sdrplay_api_Update(device.dev, device.tuner, reasonForUpdate, sdrplay_api_Update_Ext1_None);
+        if (err == sdrplay_api_Success)
+        {
+            break;
+        }
+        else
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+    }
+
+    return err;
 }

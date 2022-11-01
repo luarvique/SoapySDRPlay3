@@ -285,6 +285,8 @@ private:
 
     void waitForDevice(int msec);
 
+    sdrplay_api_ErrT tryUpdate(sdrplay_api_ReasonForUpdateT reasonForUpdate);
+
     /*******************************************************************
      * Private variables
      ******************************************************************/
@@ -331,6 +333,7 @@ private:
     bool device_unavailable;
 
     const int updateTimeout = 500;   // 500ms timeout for updates
+    const int retryCount = 3;        // number of sdrplay_api_Update() retries
 
 public:
 
