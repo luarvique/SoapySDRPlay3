@@ -85,6 +85,8 @@ SoapySDRPlay::SoapySDRPlay(const SoapySDR::Kwargs &args)
 
     streamActive = false;
 
+    device_unavailable = false;
+
     cacheKey = serNo;
     if (hwVer == SDRPLAY_RSPduo_ID) cacheKey += "@" + args.at("mode");
     SoapySDRPlay_getClaimedSerials().insert(cacheKey);
@@ -431,6 +433,18 @@ bool SoapySDRPlay::hasDCOffset(const int direction, const size_t channel) const
     return false;
 }
 
+bool SoapySDRPlay::hasFrequencyCorrection(const int direction, const size_t channel) const {
+    return true;
+}
+
+void SoapySDRPlay::setFrequencyCorrection(const int direction, const size_t channel, const double value) {
+    setFrequency(direction, channel, "CORR", value);
+}
+
+double SoapySDRPlay::getFrequencyCorrection(const int direction, const size_t channel) const {
+    return getFrequency(direction, channel, "CORR");
+}
+
 /*******************************************************************
  * Gain API
  ******************************************************************/
@@ -513,7 +527,6 @@ void SoapySDRPlay::setGain(const int direction, const size_t channel, const std:
    else if (name == "RFGR")
    {
       if (chParams->tunerParams.gain.LNAstate != (int)value) {
-
           chParams->tunerParams.gain.LNAstate = (int)value;
           doUpdate = true;
       }
@@ -521,11 +534,19 @@ void SoapySDRPlay::setGain(const int direction, const size_t channel, const std:
    if ((doUpdate == true) && (streamActive))
    {
       gr_changed = 0;
-      sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Tuner_Gr, sdrplay_api_Update_Ext1_None);
+
+      sdrplay_api_ErrT err = sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Tuner_Gr, sdrplay_api_Update_Ext1_None);
+      if (err != sdrplay_api_Success)
+      {
+         SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(Tuner_Gr) Error: %s", sdrplay_api_GetErrorString(err));
+         return;
+      }
+
       for (int i = 0; (i < updateTimeout) && (gr_changed == 0) ; ++i)
       {
          waitForDevice(1);
       }
+
       if (gr_changed == 0)
       {
          SoapySDR_log(SOAPY_SDR_WARNING, "Gain reduction update timeout.");
@@ -634,11 +655,19 @@ void SoapySDRPlay::setFrequency(const int direction,
          if (streamActive)
          {
             rf_changed = 0;
-            sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Tuner_Frf, sdrplay_api_Update_Ext1_None);
+
+            sdrplay_api_ErrT err = sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Tuner_Frf, sdrplay_api_Update_Ext1_None);
+            if (err != sdrplay_api_Success)
+            {
+               SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(Tuner_FrF) Error: %s", sdrplay_api_GetErrorString(err));
+               return;
+            }
+
             for (int i = 0; (i < updateTimeout) && (rf_changed == 0) ; ++i)
             {
                waitForDevice(1);
             }
+
             if (rf_changed == 0)
             {
                SoapySDR_log(SOAPY_SDR_WARNING, "RF center frequency update timeout.");
@@ -697,7 +726,7 @@ SoapySDR::RangeList SoapySDRPlay::getFrequencyRange(const int direction, const s
     return getFrequencyRange(direction, channel, "RF");
 }
 
-SoapySDR::RangeList SoapySDRPlay::getFrequencyRange(const int direction, const size_t channel,  const std::string &name) const
+SoapySDR::RangeList SoapySDRPlay::getFrequencyRange(const int direction, const size_t channel, const std::string &name) const
 {
     SoapySDR::RangeList results;
     if (name == "RF")
@@ -773,7 +802,6 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
               chParams->ctrlParams.decimation.wideBandSignal = 0;
           }
           reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(reasonForUpdate | sdrplay_api_Update_Ctrl_Decimation);
-          waitForUpdate = true;
        }
        if (bwType != chParams->tunerParams.bwType)
        {
@@ -790,7 +818,12 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
              // 2,685,312 and 2,685,313 the rx_callbacks stop for some
              // reason
              fs_changed = 0;
-             sdrplay_api_Update(device.dev, device.tuner, reasonForUpdate, sdrplay_api_Update_Ext1_None);
+             sdrplay_api_ErrT err = sdrplay_api_Update(device.dev, device.tuner, reasonForUpdate, sdrplay_api_Update_Ext1_None);
+             if (err != sdrplay_api_Success)
+             {
+                 SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(%08x) Error: %s", reasonForUpdate, sdrplay_api_GetErrorString(err));
+                 return;
+             }
              if (waitForUpdate)
              {
                 for (int i = 0; (i < updateTimeout) && (fs_changed == 0) ; ++i)
@@ -799,7 +832,7 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
                 }
                 if (fs_changed == 0)
                 {
-                   SoapySDR_log(SOAPY_SDR_WARNING, "Sample rate/decimation update timeout.");
+                   SoapySDR_log(SOAPY_SDR_WARNING, "Sample rate update timeout.");
                 }
              }
           }
@@ -1410,11 +1443,19 @@ void SoapySDRPlay::writeSetting(const std::string &key, const std::string &value
       if (streamActive)
       {
          gr_changed = 0;
-         sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Tuner_Gr, sdrplay_api_Update_Ext1_None);
+
+         sdrplay_api_ErrT err = sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Tuner_Gr, sdrplay_api_Update_Ext1_None);
+         if (err != sdrplay_api_Success)
+         {
+            SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(Tuner_Gr) Error: %s", sdrplay_api_GetErrorString(err));
+            return;
+         }
+
          for (int i = 0; (i < updateTimeout) && (gr_changed == 0) ; ++i)
          {
             waitForDevice(1);
          }
+
          if (gr_changed == 0)
          {
             SoapySDR_log(SOAPY_SDR_WARNING, "Gain reduction update timeout.");

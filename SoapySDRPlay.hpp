@@ -139,6 +139,12 @@ public:
 
     bool hasDCOffsetMode(const int direction, const size_t channel) const;
 
+    bool hasFrequencyCorrection(const int direction, const size_t channel) const;
+
+    void setFrequencyCorrection(const int direction, const size_t channel, const double value);
+
+    double getFrequencyCorrection(const int direction, const size_t channel) const;
+
     /*******************************************************************
      * Gain API
      ******************************************************************/
@@ -320,6 +326,10 @@ private:
     volatile int gr_changed;
     volatile int rf_changed;
     volatile int fs_changed;
+
+    // event callback reporting device is unavailable
+    bool device_unavailable;
+
     const int updateTimeout = 500;   // 500ms timeout for updates
 
 public:
