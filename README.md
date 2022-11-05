@@ -53,7 +53,7 @@ If there's nothing like that, try first to disconnect the RSP and then connect i
 The MIT License (MIT)
 
 Copyright (c) 2015 Charles J. Cliffe<br/>
-Copyright (c) 2020 Franco Venturi - changes for SDRplay API version 3 and Dual Tuner for RSPduo
+Copyright (c) 2020 Franco Venturi - changes for SDRplay API version 3 and Dual Tuner for RSPduo<br/>
 Copyright (c) 2022 Marat Fayzullin - stability improvements and fixes
 
 
