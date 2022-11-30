@@ -45,9 +45,6 @@
 #define DEFAULT_NUM_BUFFERS       (8)
 #define DEFAULT_ELEMS_PER_SAMPLE  (2)
 
-#define GAIN_DEFAULT              (0)
-#define GAIN_IFGR_ONLY            (1)
-
 std::set<std::string> &SoapySDRPlay_getClaimedSerials(void);
 
 class SoapySDRPlay: public SoapySDR::Device
@@ -311,11 +308,8 @@ private:
     const unsigned int bufferElems = DEFAULT_BUFFER_LENGTH;
     const int elementsPerSample = DEFAULT_ELEMS_PER_SAMPLE;
 
-    //default gain control behavior
-    int gain_behavior = GAIN_IFGR_ONLY;
-
     std::atomic_uint shortsPerWord;
- 
+
     std::atomic_bool streamActive;
 
     std::atomic_bool useShort;
@@ -325,9 +319,9 @@ private:
     static std::unordered_map<std::string, sdrplay_api_DeviceT*> selectedRSPDevices;
 
     // RX callback reporting changes to gain reduction, frequency, sample rate
-    volatile int gr_changed;
-    volatile int rf_changed;
-    volatile int fs_changed;
+    int gr_changed;
+    int rf_changed;
+    int fs_changed;
 
     // event callback reporting device is unavailable
     bool device_unavailable;
