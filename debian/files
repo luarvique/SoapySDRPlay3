@@ -1,4 +1,4 @@
 soapysdr-module-sdrplay3_0.8.1_all.deb libs optional
-soapysdr0.8-module-sdrplay3-dbgsym_0.8.1_amd64.ddeb debug optional automatic=yes
-soapysdr0.8-module-sdrplay3_0.8.1_amd64.deb libs optional
-soapysdrplay3_0.8.1_amd64.buildinfo libs optional
+soapysdr0.8-module-sdrplay3-dbgsym_0.8.1_arm64.ddeb debug optional automatic=yes
+soapysdr0.8-module-sdrplay3_0.8.1_arm64.deb libs optional
+soapysdrplay3_0.8.1_arm64.buildinfo libs optional

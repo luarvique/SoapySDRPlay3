@@ -265,7 +265,7 @@ private:
 
     static sdrplay_api_Bw_MHzT getBwEnumForRate(double output_sample_rate);
 
-    static  double getBwValueFromEnum(sdrplay_api_Bw_MHzT bwEnum);
+    static double getBwValueFromEnum(sdrplay_api_Bw_MHzT bwEnum);
 
     static sdrplay_api_Bw_MHzT sdrPlayGetBwMhzEnum(double bw);
 
@@ -283,6 +283,11 @@ private:
     void waitForDevice(int msec);
 
     sdrplay_api_ErrT tryUpdate(sdrplay_api_ReasonForUpdateT reasonForUpdate);
+
+#ifdef SHOW_SERIAL_NUMBER_IN_MESSAGES
+    void SoapySDR_log(const SoapySDRLogLevel logLevel, const char *message) const;
+    void SoapySDR_logf(const SoapySDRLogLevel logLevel, const char *format, ...) const;
+#endif
 
     /*******************************************************************
      * Private variables
