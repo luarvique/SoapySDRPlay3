@@ -1929,7 +1929,6 @@ void SoapySDRPlay::releaseDevice()
     return;
 }
 
-<<<<<<< HEAD
 void SoapySDRPlay::waitForDevice(int msec)
 {
     _general_state_mutex.unlock();
@@ -1956,7 +1955,7 @@ sdrplay_api_ErrT SoapySDRPlay::tryUpdate(sdrplay_api_ReasonForUpdateT reasonForU
 
     return err;
 }
-=======
+
 #ifdef SHOW_SERIAL_NUMBER_IN_MESSAGES
 void SoapySDRPlay::SoapySDR_log(const SoapySDRLogLevel logLevel,
                                 const char *message) const
@@ -1977,4 +1976,3 @@ void SoapySDRPlay::SoapySDR_logf(const SoapySDRLogLevel logLevel,
     va_end(argList);
 }
 #endif
->>>>>>> 794425ff7d8cc153190d6545332df604731bab41
