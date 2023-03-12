@@ -909,12 +909,8 @@ double SoapySDRPlay::getInputSampleRateAndDecimation(uint32_t output_sample_rate
             *ifType = lif; *decM =  2; *decEnable = 1;
             return lif_input_sample_rate;
         case 2000000:
-            if (lif == sdrplay_api_IF_2_048)
-            {
-                *ifType = lif; *decM =  1; *decEnable = 0;
-                return lif_input_sample_rate;
-            }
-            break;
+            *ifType = lif; *decM =  1; *decEnable = 0;
+            return lif_input_sample_rate;
     }
 
     if (device.hwVer == SDRPLAY_RSPduo_ID && device.rspDuoMode != sdrplay_api_RspDuoMode_Single_Tuner)
@@ -922,7 +918,7 @@ double SoapySDRPlay::getInputSampleRateAndDecimation(uint32_t output_sample_rate
         return -1;
     }
 
-    if (output_sample_rate < 2000000)
+    if (output_sample_rate <= 2000000)
     {
         switch (output_sample_rate) {
             case 96000:
@@ -1019,14 +1015,14 @@ SoapySDR::RangeList SoapySDRPlay::getBandwidthRange(const int direction, const s
 
 sdrplay_api_Bw_MHzT SoapySDRPlay::getBwEnumForRate(double output_sample_rate)
 {
-   if      (output_sample_rate <=  200000) return sdrplay_api_BW_0_200;
-   else if (output_sample_rate <=  300000) return sdrplay_api_BW_0_300;
-   else if (output_sample_rate <=  600000) return sdrplay_api_BW_0_600;
-   else if (output_sample_rate <= 1536000) return sdrplay_api_BW_1_536;
-   else if (output_sample_rate <= 5000000) return sdrplay_api_BW_5_000;
-   else if (output_sample_rate <= 6000000) return sdrplay_api_BW_6_000;
-   else if (output_sample_rate <= 7000000) return sdrplay_api_BW_7_000;
-   else                                    return sdrplay_api_BW_8_000;
+   if      (output_sample_rate <  300000) return sdrplay_api_BW_0_200;
+   else if (output_sample_rate <  600000) return sdrplay_api_BW_0_300;
+   else if (output_sample_rate < 1536000) return sdrplay_api_BW_0_600;
+   else if (output_sample_rate < 5000000) return sdrplay_api_BW_1_536;
+   else if (output_sample_rate < 6000000) return sdrplay_api_BW_5_000;
+   else if (output_sample_rate < 7000000) return sdrplay_api_BW_6_000;
+   else if (output_sample_rate < 8000000) return sdrplay_api_BW_7_000;
+   else                                   return sdrplay_api_BW_8_000;
 }
 
 
