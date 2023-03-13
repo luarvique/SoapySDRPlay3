@@ -752,19 +752,24 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
 
        sdrplay_api_Bw_MHzT bwType = getBwEnumForRate(output_sample_rate);
 
-       sdrplay_api_ReasonForUpdateT reasonForUpdate = sdrplay_api_Update_None;
+       sdrplay_api_ReasonForUpdateT reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(
+          sdrplay_api_Update_Tuner_IfType | sdrplay_api_Update_Tuner_BwType);
+
        bool waitForUpdate = false;
-       if (deviceParams->devParams && input_sample_rate != deviceParams->devParams->fsFreq.fsHz)
+
+       // update all parameters in case SDRPlay API requires them updated
+       // together
+       chParams->tunerParams.ifType = ifType;
+       chParams->tunerParams.bwType = bwType;
+
+       // always update input sample rate too
+       if (deviceParams->devParams)
        {
           deviceParams->devParams->fsFreq.fsHz = input_sample_rate;
           reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(reasonForUpdate | sdrplay_api_Update_Dev_Fs);
           waitForUpdate = true;
        }
-       if (ifType != chParams->tunerParams.ifType)
-       {
-          chParams->tunerParams.ifType = ifType;
-          reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(reasonForUpdate | sdrplay_api_Update_Tuner_IfType);
-       }
+
        if (decM != chParams->ctrlParams.decimation.decimationFactor)
        {
           chParams->ctrlParams.decimation.enable = decEnable;
@@ -777,11 +782,7 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
           }
           reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(reasonForUpdate | sdrplay_api_Update_Ctrl_Decimation);
        }
-       if (bwType != chParams->tunerParams.bwType)
-       {
-          chParams->tunerParams.bwType = bwType;
-          reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(reasonForUpdate | sdrplay_api_Update_Tuner_BwType);
-       }
+
        if (reasonForUpdate != sdrplay_api_Update_None)
        {
           if (_streams[0]) { _streams[0]->reset = true; }
