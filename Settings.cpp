@@ -242,7 +242,6 @@ void SoapySDRPlay::setAntenna(const int direction, const size_t channel, const s
 
         if (changeToAntennaA_B)
         {
-        
             //if we are currently High_Z, make the switch first.
             if (chParams->rsp2TunerParams.amPortSel == sdrplay_api_Rsp2_AMPORT_1)
             {
@@ -370,7 +369,7 @@ std::string SoapySDRPlay::getAntenna(const int direction, const size_t channel) 
             return "Antenna A";
         }
         else {
-            return "Antenna B";  
+            return "Antenna B";
         }
     }
     else if (device.hwVer == SDRPLAY_RSPduo_ID)
@@ -956,7 +955,7 @@ void SoapySDRPlay::setBandwidth(const int direction, const size_t channel, const
 {
     std::lock_guard <std::mutex> lock(_general_state_mutex);
 
-   if (direction == SOAPY_SDR_RX) 
+   if (direction == SOAPY_SDR_RX)
    {
       // gqrx uses the value 0 for the default; in this case set it to the
       // maximum value compatible with the sample rate
