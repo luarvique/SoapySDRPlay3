@@ -1,3 +1,15 @@
+Release 0.8.2 (2023-03-14)
+==========================
+
+- Widened filters to reduce the hump sizes for all bandwidths.
+- Fixed RSP breaking up when changing from LIF to ZIF mode.
+- Added 1.536MHz bandwidth.
+
+Release 0.8.1 (2022-12-27)
+==========================
+
+- First packaged release.
+
 Release 0.4.1 (2022-09-14)
 ==========================
 

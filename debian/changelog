@@ -1,3 +1,11 @@
+soapysdrplay3 (0.8.2) stable; urgency=low
+
+  * Widened filters to reduce the hump sizes for all bandwidths.
+  * Fixed RSP breaking up when changing from LIF to ZIF mode.
+  * Added 1.536MHz bandwidth.
+
+ -- Marat Fayzullin <luarvique@gmail.com>  Tue, 14 Mar 2023 12:18:02 -0000
+
 soapysdrplay3 (0.8.1) stable; urgency=low
 
   * First packaged release.
