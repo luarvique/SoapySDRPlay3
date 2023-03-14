@@ -4,6 +4,7 @@
  * Copyright (c) 2015 Charles J. Cliffe
  * Copyright (c) 2020 Franco Venturi - changes for SDRplay API version 3
  *                                     and Dual Tuner for RSPduo
+ * Copyright (c) 2022 Marat Fayzullin - stability fixes
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -85,17 +86,22 @@ void SoapySDRPlay::rx_callback(short *xi, short *xq,
     }
     std::lock_guard<std::mutex> lock(stream->mutex);
 
-    if (gr_changed == 0 && params->grChanged != 0)
+    if (params->grChanged != 0 || params->rfChanged != 0 || params->fsChanged != 0)
     {
-        gr_changed = params->grChanged;
-    }
-    if (rf_changed == 0 && params->rfChanged != 0)
-    {
-        rf_changed = params->rfChanged;
-    }
-    if (fs_changed == 0 && params->fsChanged != 0)
-    {
-        fs_changed = params->fsChanged;
+        std::lock_guard <std::mutex> lock(_general_state_mutex);
+
+        if (gr_changed == 0 && params->grChanged != 0)
+        {
+            gr_changed = params->grChanged;
+        }
+        if (rf_changed == 0 && params->rfChanged != 0)
+        {
+            rf_changed = params->rfChanged;
+        }
+        if (fs_changed == 0 && params->fsChanged != 0)
+        {
+            fs_changed = params->fsChanged;
+        }
     }
 
     if (stream->count == numBuffers)
@@ -312,7 +318,7 @@ void SoapySDRPlay::closeStream(SoapySDR::Stream *stream)
                 break;
             }
             SoapySDR_logf(SOAPY_SDR_WARNING, "Please close RSPduo slave device first. Trying again in %d seconds", uninitRetryDelay);
-            std::this_thread::sleep_for(std::chrono::seconds(uninitRetryDelay));
+            waitForDevice(uninitRetryDelay*1000);
         }
         streamActive = false;
     }

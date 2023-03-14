@@ -4,6 +4,7 @@
  * Copyright (c) 2015 Charles J. Cliffe
  * Copyright (c) 2020 Franco Venturi - changes for SDRplay API version 3
  *                                     and Dual Tuner for RSPduo
+ * Copyright (c) 2022 Marat Fayzullin - stability fixes
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -241,7 +242,6 @@ void SoapySDRPlay::setAntenna(const int direction, const size_t channel, const s
 
         if (changeToAntennaA_B)
         {
-        
             //if we are currently High_Z, make the switch first.
             if (chParams->rsp2TunerParams.amPortSel == sdrplay_api_Rsp2_AMPORT_1)
             {
@@ -369,7 +369,7 @@ std::string SoapySDRPlay::getAntenna(const int direction, const size_t channel) 
             return "Antenna A";
         }
         else {
-            return "Antenna B";  
+            return "Antenna B";
         }
     }
     else if (device.hwVer == SDRPLAY_RSPduo_ID)
@@ -488,9 +488,15 @@ bool SoapySDRPlay::getGainMode(const int direction, const size_t channel) const
     return chParams->ctrlParams.agc.enable != sdrplay_api_AGC_DISABLE;
 }
 
+void SoapySDRPlay::setGain(const int direction, const size_t channel, const double value)
+{
+    // Defaulting to IFGR, since RFGR is not really a gain setting
+    setGain(direction, channel, "IFGR", value);
+}
+
 void SoapySDRPlay::setGain(const int direction, const size_t channel, const std::string &name, const double value)
 {
-    std::lock_guard <std::mutex> lock(_general_state_mutex);
+   std::lock_guard <std::mutex> lock(_general_state_mutex);
 
    bool doUpdate = false;
 
@@ -520,24 +526,29 @@ void SoapySDRPlay::setGain(const int direction, const size_t channel, const std:
    if ((doUpdate == true) && (streamActive))
    {
       gr_changed = 0;
-      sdrplay_api_ErrT err = sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Tuner_Gr, sdrplay_api_Update_Ext1_None);
+
+      sdrplay_api_ErrT err = tryUpdate(sdrplay_api_Update_Tuner_Gr);
       if (err != sdrplay_api_Success)
       {
          SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(Tuner_Gr) Error: %s", sdrplay_api_GetErrorString(err));
          return;
       }
-      for (int i = 0; i < updateTimeout; ++i)
+
+      for (int i = 0; (i < updateTimeout) && (gr_changed == 0) ; ++i)
       {
-         if (gr_changed != 0) {
-            break;
-         }
-         std::this_thread::sleep_for(std::chrono::milliseconds(1));
+         waitForDevice(1);
       }
+
       if (gr_changed == 0)
       {
          SoapySDR_log(SOAPY_SDR_WARNING, "Gain reduction update timeout.");
       }
    }
+}
+
+double SoapySDRPlay::getGain(const int direction, const size_t channel) const
+{
+    return getGain(direction, channel, "IFGR");
 }
 
 double SoapySDRPlay::getGain(const int direction, const size_t channel, const std::string &name) const
@@ -554,6 +565,11 @@ double SoapySDRPlay::getGain(const int direction, const size_t channel, const st
    }
 
    return 0;
+}
+
+SoapySDR::Range SoapySDRPlay::getGainRange(const int direction, const size_t channel) const
+{
+    return getGainRange(direction, channel, "IFGR");
 }
 
 SoapySDR::Range SoapySDRPlay::getGainRange(const int direction, const size_t channel, const std::string &name) const
@@ -594,7 +610,6 @@ void SoapySDRPlay::setFrequency(const int direction,
                                  const double frequency,
                                  const SoapySDR::Kwargs &args)
 {
-    // default to RF
     setFrequency(direction, channel, "RF", frequency, args);
 }
 
@@ -614,19 +629,19 @@ void SoapySDRPlay::setFrequency(const int direction,
          if (streamActive)
          {
             rf_changed = 0;
-            sdrplay_api_ErrT err = sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Tuner_Frf, sdrplay_api_Update_Ext1_None);
+
+            sdrplay_api_ErrT err = tryUpdate(sdrplay_api_Update_Tuner_Frf);
             if (err != sdrplay_api_Success)
             {
                SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(Tuner_FrF) Error: %s", sdrplay_api_GetErrorString(err));
                return;
             }
-            for (int i = 0; i < updateTimeout; ++i)
+
+            for (int i = 0; (i < updateTimeout) && (rf_changed == 0) ; ++i)
             {
-               if (rf_changed != 0) {
-                  break;
-               }
-               std::this_thread::sleep_for(std::chrono::milliseconds(1));
+               waitForDevice(1);
             }
+
             if (rf_changed == 0)
             {
                SoapySDR_log(SOAPY_SDR_WARNING, "RF center frequency update timeout.");
@@ -648,7 +663,6 @@ void SoapySDRPlay::setFrequency(const int direction,
 
 double SoapySDRPlay::getFrequency(const int direction, const size_t channel) const
 {
-    // default to RF
     return getFrequency(direction, channel, "RF");
 }
 
@@ -738,19 +752,24 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
 
        sdrplay_api_Bw_MHzT bwType = getBwEnumForRate(output_sample_rate);
 
-       sdrplay_api_ReasonForUpdateT reasonForUpdate = sdrplay_api_Update_None;
+       sdrplay_api_ReasonForUpdateT reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(
+          sdrplay_api_Update_Tuner_IfType | sdrplay_api_Update_Tuner_BwType);
+
        bool waitForUpdate = false;
-       if (deviceParams->devParams && input_sample_rate != deviceParams->devParams->fsFreq.fsHz)
+
+       // update all parameters in case SDRPlay API requires them updated
+       // together
+       chParams->tunerParams.ifType = ifType;
+       chParams->tunerParams.bwType = bwType;
+
+       // always update input sample rate too
+       if (deviceParams->devParams)
        {
           deviceParams->devParams->fsFreq.fsHz = input_sample_rate;
           reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(reasonForUpdate | sdrplay_api_Update_Dev_Fs);
           waitForUpdate = true;
        }
-       if (ifType != chParams->tunerParams.ifType)
-       {
-          chParams->tunerParams.ifType = ifType;
-          reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(reasonForUpdate | sdrplay_api_Update_Tuner_IfType);
-       }
+
        if (decM != chParams->ctrlParams.decimation.decimationFactor)
        {
           chParams->ctrlParams.decimation.enable = decEnable;
@@ -763,11 +782,7 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
           }
           reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(reasonForUpdate | sdrplay_api_Update_Ctrl_Decimation);
        }
-       if (bwType != chParams->tunerParams.bwType)
-       {
-          chParams->tunerParams.bwType = bwType;
-          reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(reasonForUpdate | sdrplay_api_Update_Tuner_BwType);
-       }
+
        if (reasonForUpdate != sdrplay_api_Update_None)
        {
           if (_streams[0]) { _streams[0]->reset = true; }
@@ -778,20 +793,19 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
              // 2,685,312 and 2,685,313 the rx_callbacks stop for some
              // reason
              fs_changed = 0;
-             sdrplay_api_ErrT err = sdrplay_api_Update(device.dev, device.tuner, reasonForUpdate, sdrplay_api_Update_Ext1_None);
+
+             sdrplay_api_ErrT err = tryUpdate(reasonForUpdate);
              if (err != sdrplay_api_Success)
              {
                  SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(%08x) Error: %s", reasonForUpdate, sdrplay_api_GetErrorString(err));
                  return;
              }
+
              if (waitForUpdate)
              {
-                for (int i = 0; i < updateTimeout; ++i)
+                for (int i = 0; (i < updateTimeout) && (fs_changed == 0) ; ++i)
                 {
-                   if (fs_changed != 0) {
-                      break;
-                   }
-                   std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                   waitForDevice(1);
                 }
                 if (fs_changed == 0)
                 {
@@ -854,6 +868,7 @@ std::vector<double> SoapySDRPlay::listSampleRates(const int direction, const siz
     output_sample_rates.push_back(500000);
     output_sample_rates.push_back(768000);
     output_sample_rates.push_back(1000000);
+    output_sample_rates.push_back(1536000);
     output_sample_rates.push_back(2000000);
     output_sample_rates.push_back(2048000);
     output_sample_rates.push_back(3000000);
@@ -903,7 +918,7 @@ double SoapySDRPlay::getInputSampleRateAndDecimation(uint32_t output_sample_rate
     {
         return -1;
     }
-  
+
     if (output_sample_rate <= 2000000)
     {
         switch (output_sample_rate) {
@@ -918,6 +933,9 @@ double SoapySDRPlay::getInputSampleRateAndDecimation(uint32_t output_sample_rate
                 return output_sample_rate * *decM;
             case 768000:
                 *ifType = sdrplay_api_IF_Zero; *decM =  4; *decEnable = 1;
+                return output_sample_rate * *decM;
+            case 1536000:
+                *ifType = sdrplay_api_IF_Zero; *decM =  2; *decEnable = 1;
                 return output_sample_rate * *decM;
             default:
                 return -1;
@@ -938,7 +956,7 @@ void SoapySDRPlay::setBandwidth(const int direction, const size_t channel, const
 {
     std::lock_guard <std::mutex> lock(_general_state_mutex);
 
-   if (direction == SOAPY_SDR_RX) 
+   if (direction == SOAPY_SDR_RX)
    {
       // gqrx uses the value 0 for the default; in this case set it to the
       // maximum value compatible with the sample rate
@@ -998,14 +1016,14 @@ SoapySDR::RangeList SoapySDRPlay::getBandwidthRange(const int direction, const s
 
 sdrplay_api_Bw_MHzT SoapySDRPlay::getBwEnumForRate(double output_sample_rate)
 {
-   if      (output_sample_rate <  300000) return sdrplay_api_BW_0_200;
-   else if (output_sample_rate <  600000) return sdrplay_api_BW_0_300;
-   else if (output_sample_rate < 1536000) return sdrplay_api_BW_0_600;
-   else if (output_sample_rate < 5000000) return sdrplay_api_BW_1_536;
-   else if (output_sample_rate < 6000000) return sdrplay_api_BW_5_000;
-   else if (output_sample_rate < 7000000) return sdrplay_api_BW_6_000;
-   else if (output_sample_rate < 8000000) return sdrplay_api_BW_7_000;
-   else                                   return sdrplay_api_BW_8_000;
+   if      (output_sample_rate <=  200000) return sdrplay_api_BW_0_200;
+   else if (output_sample_rate <=  300000) return sdrplay_api_BW_0_300;
+   else if (output_sample_rate <=  600000) return sdrplay_api_BW_0_600;
+   else if (output_sample_rate <= 2400000) return sdrplay_api_BW_1_536;
+   else if (output_sample_rate <= 5000000) return sdrplay_api_BW_5_000;
+   else if (output_sample_rate <= 6000000) return sdrplay_api_BW_6_000;
+   else if (output_sample_rate <= 7000000) return sdrplay_api_BW_7_000;
+   else                                    return sdrplay_api_BW_8_000;
 }
 
 
@@ -1387,19 +1405,19 @@ void SoapySDRPlay::writeSetting(const std::string &key, const std::string &value
       if (streamActive)
       {
          gr_changed = 0;
-         sdrplay_api_ErrT err = sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Tuner_Gr, sdrplay_api_Update_Ext1_None);
+
+         sdrplay_api_ErrT err = tryUpdate(sdrplay_api_Update_Tuner_Gr);
          if (err != sdrplay_api_Success)
          {
             SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(Tuner_Gr) Error: %s", sdrplay_api_GetErrorString(err));
             return;
          }
-         for (int i = 0; i < updateTimeout; ++i)
+
+         for (int i = 0; (i < updateTimeout) && (gr_changed == 0) ; ++i)
          {
-            if (gr_changed != 0) {
-               break;
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            waitForDevice(1);
          }
+
          if (gr_changed == 0)
          {
             SoapySDR_log(SOAPY_SDR_WARNING, "Gain reduction update timeout.");
@@ -1903,6 +1921,33 @@ void SoapySDRPlay::releaseDevice()
     }
 
     return;
+}
+
+void SoapySDRPlay::waitForDevice(int msec)
+{
+    _general_state_mutex.unlock();
+    std::this_thread::sleep_for(std::chrono::milliseconds(msec));
+    _general_state_mutex.lock();
+}
+
+sdrplay_api_ErrT SoapySDRPlay::tryUpdate(sdrplay_api_ReasonForUpdateT reasonForUpdate)
+{
+    sdrplay_api_ErrT err = sdrplay_api_Success;
+
+    for (int i = 0 ; i < retryCount; ++i)
+    {
+        err = sdrplay_api_Update(device.dev, device.tuner, reasonForUpdate, sdrplay_api_Update_Ext1_None);
+        if (err == sdrplay_api_Success)
+        {
+            break;
+        }
+        else
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    }
+
+    return err;
 }
 
 #ifdef SHOW_SERIAL_NUMBER_IN_MESSAGES

@@ -4,6 +4,7 @@
  * Copyright (c) 2015 Charles J. Cliffe
  * Copyright (c) 2020 Franco Venturi - changes for SDRplay API version 3
  *                                     and Dual Tuner for RSPduo
+ * Copyright (c) 2022 Marat Fayzullin - stability fixes
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -154,9 +155,15 @@ public:
 
     bool getGainMode(const int direction, const size_t channel) const;
 
+    void setGain(const int direction, const size_t channel, const double value);
+
     void setGain(const int direction, const size_t channel, const std::string &name, const double value);
 
+    double getGain(const int direction, const size_t channel) const;
+
     double getGain(const int direction, const size_t channel, const std::string &name) const;
+
+    SoapySDR::Range getGainRange(const int direction, const size_t channel) const;
 
     SoapySDR::Range getGainRange(const int direction, const size_t channel, const std::string &name) const;
 
@@ -272,11 +279,14 @@ private:
 
     void releaseDevice();
 
+    void waitForDevice(int msec);
+
+    sdrplay_api_ErrT tryUpdate(sdrplay_api_ReasonForUpdateT reasonForUpdate);
+
 #ifdef SHOW_SERIAL_NUMBER_IN_MESSAGES
     void SoapySDR_log(const SoapySDRLogLevel logLevel, const char *message) const;
     void SoapySDR_logf(const SoapySDRLogLevel logLevel, const char *format, ...) const;
 #endif
-
 
     /*******************************************************************
      * Private variables
@@ -303,7 +313,7 @@ private:
     const int elementsPerSample = DEFAULT_ELEMS_PER_SAMPLE;
 
     std::atomic_uint shortsPerWord;
- 
+
     std::atomic_bool streamActive;
 
     std::atomic_bool useShort;
@@ -316,9 +326,12 @@ private:
     int gr_changed;
     int rf_changed;
     int fs_changed;
+
     // event callback reporting device is unavailable
     bool device_unavailable;
+
     const int updateTimeout = 500;   // 500ms timeout for updates
+    const int retryCount = 3;        // number of sdrplay_api_Update() retries
 
 public:
 

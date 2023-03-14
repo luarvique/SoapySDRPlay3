@@ -1,0 +1,25 @@
+Source: soapysdrplay3
+Section: libs
+Priority: optional
+Maintainer: Marat Fayzullin <luarvique@gmail.com>
+Build-Depends: debhelper (>= 9.0.0), cmake, libsoapysdr-dev
+Standards-Version: 4.5.0
+Homepage: https://github.com/pothosware/SoapySDRPlay/wiki
+Vcs-Git: https://github.com/luarvique/SoapySDRPlay3.git
+Vcs-Browser: https://github.com/luarvique/SoapySDRPlay3
+
+Package: soapysdr0.8-module-sdrplay3
+Architecture: any
+Multi-Arch: same
+Depends: libsoapysdr0.8 (>=0.8.1), ${shlibs:Depends}, ${misc:Depends}
+Description: Soapy SDRPlay3 - SDRlay device APIv3 support for Soapy SDR.
+ A Soapy module that supports SDRPlay APIv3 devices within the Soapy API.
+
+Package: soapysdr-module-sdrplay3
+Architecture: all
+Depends: soapysdr0.8-module-sdrplay3, ${misc:Depends}
+Description: Soapy SDRPlay3 - SDRlay device APIv3 support for Soapy SDR.
+ A Soapy module that supports SDRPlay APIv3 devices within the Soapy API.
+ .
+ This is an empty dependency package that pulls in the SDRPlay3 module
+ for the default version of libsoapysdr.
