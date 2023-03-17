@@ -1,13 +1,19 @@
 #!/bin/sh
 
-echo "############### PLEASE, INSTALL SDRPLAY DRIVERS ###############"
-echo "#####                                                     #####"
-echo "##### This package will not work without SDRPlay drivers, #####"
-echo "##### which have to be installed separately. Please,      #####"
-echo "##### download these drivers from                         #####"
-echo "#####                                                     #####"
-echo "#####     https://www.sdrplay.com/downloads/              #####"
-echo "#####                                                     #####"
-echo "###############################################################"
+echo "Deleting locally installed SoapySDR from /usr/local ..."
+find /usr/local -name \*SoapySDR\* | xargs -n 1 rm -rf
+echo "DONE."
+
+if [ ! -f /usr/local/lib/libsdrplay_api.so ]; then
+  echo "############### PLEASE, INSTALL SDRPLAY DRIVERS ###############"
+  echo "#####                                                     #####"
+  echo "##### This package will not work without SDRPlay drivers, #####"
+  echo "##### which have to be installed separately. Please,      #####"
+  echo "##### download these drivers from                         #####"
+  echo "#####                                                     #####"
+  echo "#####     https://www.sdrplay.com/downloads/              #####"
+  echo "#####                                                     #####"
+  echo "###############################################################"
+fi
 
 exit 0
