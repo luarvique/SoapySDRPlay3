@@ -211,7 +211,7 @@ void SoapySDRPlay::setAntenna(const int direction, const size_t channel, const s
 {
     // Check direction
     if ((direction != SOAPY_SDR_RX) || (device.hwVer == SDRPLAY_RSP1_ID) || (device.hwVer == SDRPLAY_RSP1A_ID)) {
-        return;       
+        return;
     }
 
     std::lock_guard <std::mutex> lock(_general_state_mutex);
@@ -753,7 +753,10 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
        sdrplay_api_Bw_MHzT bwType = getBwEnumForRate(output_sample_rate);
 
        sdrplay_api_ReasonForUpdateT reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(
-          sdrplay_api_Update_Tuner_IfType | sdrplay_api_Update_Tuner_BwType);
+           sdrplay_api_Update_Ctrl_Decimation |
+           sdrplay_api_Update_Tuner_IfType |
+           sdrplay_api_Update_Tuner_BwType
+       );
 
        bool waitForUpdate = false;
 
@@ -770,18 +773,11 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
           waitForUpdate = true;
        }
 
-       if (decM != chParams->ctrlParams.decimation.decimationFactor)
-       {
-          chParams->ctrlParams.decimation.enable = decEnable;
-          chParams->ctrlParams.decimation.decimationFactor = decM;
-          if (ifType == sdrplay_api_IF_Zero) {
-              chParams->ctrlParams.decimation.wideBandSignal = 1;
-          }
-          else {
-              chParams->ctrlParams.decimation.wideBandSignal = 0;
-          }
-          reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(reasonForUpdate | sdrplay_api_Update_Ctrl_Decimation);
-       }
+       // always update decimation since it depends on ifType, etc
+       chParams->ctrlParams.decimation.enable = decEnable;
+       chParams->ctrlParams.decimation.decimationFactor = decM;
+       chParams->ctrlParams.decimation.wideBandSignal =
+           ifType == sdrplay_api_IF_Zero? 1 : 0;
 
        if (reasonForUpdate != sdrplay_api_Update_None)
        {
@@ -1943,7 +1939,7 @@ sdrplay_api_ErrT SoapySDRPlay::tryUpdate(sdrplay_api_ReasonForUpdateT reasonForU
         }
         else
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
         }
     }
 
