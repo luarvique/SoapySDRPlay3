@@ -502,23 +502,17 @@ void SoapySDRPlay::setGain(const int direction, const size_t channel, const std:
 
    if (name == "IFGR")
    {
-      if (chParams->ctrlParams.agc.enable == sdrplay_api_AGC_DISABLE)
+      //apply the change if the required value is different from gRdB
+      if (chParams->tunerParams.gain.gRdB != (int)value)
       {
-         //apply the change if the required value is different from gRdB 
-         if (chParams->tunerParams.gain.gRdB != (int)value)
-         {
-            chParams->tunerParams.gain.gRdB = (int)value;
-            doUpdate = true;
-         }
-      }
-      else
-      {
-         SoapySDR_log(SOAPY_SDR_WARNING, "Not updating IFGR gain because AGC is enabled");
+          chParams->tunerParams.gain.gRdB = (int)value;
+          doUpdate = true;
       }
    }
    else if (name == "RFGR")
    {
-      if (chParams->tunerParams.gain.LNAstate != (int)value) {
+      if (chParams->tunerParams.gain.LNAstate != (int)value)
+      {
           chParams->tunerParams.gain.LNAstate = (int)value;
           doUpdate = true;
       }
