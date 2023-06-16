@@ -1,1 +1,2 @@
+blacklist-mirics.conf usr/lib/modprobe.d/
 usr/lib/*
