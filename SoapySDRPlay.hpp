@@ -331,7 +331,7 @@ private:
     bool device_unavailable;
 
     const int updateTimeout = 500;   // 500ms timeout for updates
-    const int retryCount = 3;        // number of sdrplay_api_Update() retries
+    const int retryCount = 5;        // number of sdrplay_api_Update() retries
 
 public:
 

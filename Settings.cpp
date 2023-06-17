@@ -1933,7 +1933,10 @@ sdrplay_api_ErrT SoapySDRPlay::tryUpdate(sdrplay_api_ReasonForUpdateT reasonForU
         }
         else
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            SoapySDR_logf(SOAPY_SDR_ERROR, "sdrplay_api_Update(0x%08x) %d/%d Error: %s",
+                reasonForUpdate, i+1, retryCount, sdrplay_api_GetErrorString(err));
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 
