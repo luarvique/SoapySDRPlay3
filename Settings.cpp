@@ -474,6 +474,12 @@ void SoapySDRPlay::setGainMode(const int direction, const size_t channel, const 
     if (chParams->ctrlParams.agc.enable != agc_control)
     {
         chParams->ctrlParams.agc.enable = agc_control;
+        chParams->ctrlParams.agc.attack_ms = 0;
+        chParams->ctrlParams.agc.decay_ms = 0;
+        chParams->ctrlParams.agc.decay_delay_ms = 0;
+        chParams->ctrlParams.agc.decay_threshold_dB = 0;
+        chParams->ctrlParams.agc.syncUpdate = 0;
+
         if (streamActive)
         {
             sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Ctrl_Agc, sdrplay_api_Update_Ext1_None);
@@ -1429,6 +1435,12 @@ void SoapySDRPlay::writeSetting(const std::string &key, const std::string &value
    else if (key == "agc_setpoint")
    {
       chParams->ctrlParams.agc.setPoint_dBfs = stoi(value);
+      chParams->ctrlParams.agc.attack_ms = 0;
+      chParams->ctrlParams.agc.decay_ms = 0;
+      chParams->ctrlParams.agc.decay_delay_ms = 0;
+      chParams->ctrlParams.agc.decay_threshold_dB = 0;
+      chParams->ctrlParams.agc.syncUpdate = 0;
+
       if (streamActive)
       {
          sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Ctrl_Agc, sdrplay_api_Update_Ext1_None);
@@ -1936,7 +1948,8 @@ sdrplay_api_ErrT SoapySDRPlay::tryUpdate(sdrplay_api_ReasonForUpdateT reasonForU
             SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(0x%08x) %d/%d Error: %s",
                 reasonForUpdate, i+1, retryCount, sdrplay_api_GetErrorString(err));
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            // Wait for a bit, letting streaming do its thing
+            waitForDevice(100);
         }
     }
 
