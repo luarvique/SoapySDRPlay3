@@ -1,3 +1,13 @@
+Release 0.8.3 (2023-06-16)
+==========================
+
+- Increased time between bandwidth change attempts to 100ms.
+- Increased number of bandwidth change retries to 5.
+- Now allowing to change IFGR while AGC is on.
+- Now always setting decimation with bandwidth.
+- Now installing blacklist for Mirics TV drivers.
+- Made deleting locally compiled Soapy optional.
+
 Release 0.8.2 (2023-03-14)
 ==========================
 

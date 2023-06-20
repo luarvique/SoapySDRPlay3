@@ -211,7 +211,7 @@ void SoapySDRPlay::setAntenna(const int direction, const size_t channel, const s
 {
     // Check direction
     if ((direction != SOAPY_SDR_RX) || (device.hwVer == SDRPLAY_RSP1_ID) || (device.hwVer == SDRPLAY_RSP1A_ID)) {
-        return;       
+        return;
     }
 
     std::lock_guard <std::mutex> lock(_general_state_mutex);
@@ -474,6 +474,12 @@ void SoapySDRPlay::setGainMode(const int direction, const size_t channel, const 
     if (chParams->ctrlParams.agc.enable != agc_control)
     {
         chParams->ctrlParams.agc.enable = agc_control;
+        chParams->ctrlParams.agc.attack_ms = 0;
+        chParams->ctrlParams.agc.decay_ms = 0;
+        chParams->ctrlParams.agc.decay_delay_ms = 0;
+        chParams->ctrlParams.agc.decay_threshold_dB = 0;
+        chParams->ctrlParams.agc.syncUpdate = 0;
+
         if (streamActive)
         {
             sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Ctrl_Agc, sdrplay_api_Update_Ext1_None);
@@ -502,23 +508,17 @@ void SoapySDRPlay::setGain(const int direction, const size_t channel, const std:
 
    if (name == "IFGR")
    {
-      if (chParams->ctrlParams.agc.enable == sdrplay_api_AGC_DISABLE)
+      //apply the change if the required value is different from gRdB
+      if (chParams->tunerParams.gain.gRdB != (int)value)
       {
-         //apply the change if the required value is different from gRdB 
-         if (chParams->tunerParams.gain.gRdB != (int)value)
-         {
-            chParams->tunerParams.gain.gRdB = (int)value;
-            doUpdate = true;
-         }
-      }
-      else
-      {
-         SoapySDR_log(SOAPY_SDR_WARNING, "Not updating IFGR gain because AGC is enabled");
+          chParams->tunerParams.gain.gRdB = (int)value;
+          doUpdate = true;
       }
    }
    else if (name == "RFGR")
    {
-      if (chParams->tunerParams.gain.LNAstate != (int)value) {
+      if (chParams->tunerParams.gain.LNAstate != (int)value)
+      {
           chParams->tunerParams.gain.LNAstate = (int)value;
           doUpdate = true;
       }
@@ -753,7 +753,10 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
        sdrplay_api_Bw_MHzT bwType = getBwEnumForRate(output_sample_rate);
 
        sdrplay_api_ReasonForUpdateT reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(
-          sdrplay_api_Update_Tuner_IfType | sdrplay_api_Update_Tuner_BwType);
+           sdrplay_api_Update_Ctrl_Decimation |
+           sdrplay_api_Update_Tuner_IfType |
+           sdrplay_api_Update_Tuner_BwType
+       );
 
        bool waitForUpdate = false;
 
@@ -770,18 +773,11 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
           waitForUpdate = true;
        }
 
-       if (decM != chParams->ctrlParams.decimation.decimationFactor)
-       {
-          chParams->ctrlParams.decimation.enable = decEnable;
-          chParams->ctrlParams.decimation.decimationFactor = decM;
-          if (ifType == sdrplay_api_IF_Zero) {
-              chParams->ctrlParams.decimation.wideBandSignal = 1;
-          }
-          else {
-              chParams->ctrlParams.decimation.wideBandSignal = 0;
-          }
-          reasonForUpdate = (sdrplay_api_ReasonForUpdateT)(reasonForUpdate | sdrplay_api_Update_Ctrl_Decimation);
-       }
+       // always update decimation since it depends on ifType, etc
+       chParams->ctrlParams.decimation.enable = decEnable;
+       chParams->ctrlParams.decimation.decimationFactor = decM;
+       chParams->ctrlParams.decimation.wideBandSignal =
+           ifType == sdrplay_api_IF_Zero? 1 : 0;
 
        if (reasonForUpdate != sdrplay_api_Update_None)
        {
@@ -1439,6 +1435,12 @@ void SoapySDRPlay::writeSetting(const std::string &key, const std::string &value
    else if (key == "agc_setpoint")
    {
       chParams->ctrlParams.agc.setPoint_dBfs = stoi(value);
+      chParams->ctrlParams.agc.attack_ms = 0;
+      chParams->ctrlParams.agc.decay_ms = 0;
+      chParams->ctrlParams.agc.decay_delay_ms = 0;
+      chParams->ctrlParams.agc.decay_threshold_dB = 0;
+      chParams->ctrlParams.agc.syncUpdate = 0;
+
       if (streamActive)
       {
          sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Ctrl_Agc, sdrplay_api_Update_Ext1_None);
@@ -1943,7 +1945,11 @@ sdrplay_api_ErrT SoapySDRPlay::tryUpdate(sdrplay_api_ReasonForUpdateT reasonForU
         }
         else
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            SoapySDR_logf(SOAPY_SDR_WARNING, "sdrplay_api_Update(0x%08x) %d/%d Error: %s",
+                reasonForUpdate, i+1, retryCount, sdrplay_api_GetErrorString(err));
+
+            // Wait for a bit, letting streaming do its thing
+            waitForDevice(100);
         }
     }
 

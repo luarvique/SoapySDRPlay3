@@ -1,3 +1,14 @@
+soapysdrplay3 (0.8.3) stable; urgency=low
+
+  * Increased time between bandwidth change attempts to 100ms.
+  * Increased number of bandwidth change retries to 5.
+  * Now allowing to change IFGR while AGC is on.
+  * Now always setting decimation with bandwidth.
+  * Now installing blacklist for Mirics TV drivers.
+  * Made deleting locally compiled Soapy optional.
+
+ -- Marat Fayzullin <luarvique@gmail.com>  Fri, 16 Jun 2023 12:18:02 -0000
+
 soapysdrplay3 (0.8.2) stable; urgency=low
 
   * Widened filters to reduce the hump sizes for all bandwidths.

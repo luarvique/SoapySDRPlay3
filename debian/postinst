@@ -1,0 +1,37 @@
+#!/bin/sh
+
+if [ -d /usr/local/lib/SoapySDR ]; then
+  echo "################# DELETE LOCAL SOAPYSDR BUILD #################"
+  echo "#####                                                     #####"
+  echo "##### If you happen to have locally built SoapySDR in the #####"
+  echo "##### /usr/local directory, it may prevent the packaged   #####"
+  echo "##### version from working. By answering 'y', you are     #####"
+  echo "##### letting this script delete all SoapySDR files from  #####"
+  echo "##### the /usr/local. Instead, there is now the packaged  #####"
+  echo "##### version installed in the /usr directory.            #####"
+  echo "#####                                                     #####"
+  echo "###############################################################"
+  echo -n "Delete locally installed SoapySDR files from /usr/local? [yn] "
+  read answer
+  case "$answer" in
+  y*|y*)
+    echo "Deleting locally installed SoapySDR from /usr/local ..."
+    find /usr/local -name \*SoapySDR\* | xargs -n 1 rm -rf
+    echo "DONE."
+  ;;
+  esac
+fi
+
+if [ ! -f /usr/local/lib/libsdrplay_api.so ]; then
+  echo "############### PLEASE, INSTALL SDRPLAY DRIVERS ###############"
+  echo "#####                                                     #####"
+  echo "##### This package will not work without SDRPlay drivers, #####"
+  echo "##### which have to be installed separately. Please,      #####"
+  echo "##### download these drivers from                         #####"
+  echo "#####                                                     #####"
+  echo "#####     https://www.sdrplay.com/downloads/              #####"
+  echo "#####                                                     #####"
+  echo "###############################################################"
+fi
+
+exit 0
