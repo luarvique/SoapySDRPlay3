@@ -785,6 +785,9 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
 
        if (reasonForUpdate != sdrplay_api_Update_None)
        {
+          if (_streams[0]) { _streams[0]->reset = true; }
+          if (_streams[1]) { _streams[1]->reset = true; }
+
           if (streamActive)
           {
              // beware that when the fs change crosses the boundary between
@@ -811,10 +814,6 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
                 }
              }
           }
-
-          // Hopefully, everything updated now and we can restart streams
-          if (_streams[0]) { _streams[0]->reset = true; }
-          if (_streams[1]) { _streams[1]->reset = true; }
        }
     }
 }
