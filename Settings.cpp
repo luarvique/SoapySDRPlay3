@@ -62,6 +62,9 @@ SoapySDRPlay::SoapySDRPlay(const SoapySDR::Kwargs &args)
     // - DC correction: on
     // - IQ balance: on
 
+    // change the default AGC set point to -30dBfs
+    chParams->ctrlParams.agc.setPoint_dBfs = -30;
+
     // process additional device string arguments
     for (std::pair<std::string, std::string> arg : args) {
         // ignore 'driver', 'label', 'mode', 'serial', and 'soapy'
@@ -614,6 +617,7 @@ void SoapySDRPlay::setFrequency(const int direction,
                                  const double frequency,
                                  const SoapySDR::Kwargs &args)
 {
+    // default to RF
     setFrequency(direction, channel, "RF", frequency, args);
 }
 
@@ -667,6 +671,7 @@ void SoapySDRPlay::setFrequency(const int direction,
 
 double SoapySDRPlay::getFrequency(const int direction, const size_t channel) const
 {
+    // default to RF
     return getFrequency(direction, channel, "RF");
 }
 
@@ -1390,6 +1395,14 @@ SoapySDR::ArgInfoList SoapySDRPlay::getSettingInfo(void) const
        DabNotchArg.description = "DAB Notch Filter Control";
        DabNotchArg.type = SoapySDR::ArgInfo::BOOL;
        setArgs.push_back(DabNotchArg);
+
+       SoapySDR::ArgInfo HDRArg;
+       HDRArg.key = "hdr_ctrl";
+       HDRArg.value = "true";
+       HDRArg.name = "HDR Enable";
+       HDRArg.description = "RSPdx HDR Control";
+       HDRArg.type = SoapySDR::ArgInfo::BOOL;
+       setArgs.push_back(HDRArg);
     }
 
     return setArgs;
@@ -1594,6 +1607,21 @@ void SoapySDRPlay::writeSetting(const std::string &key, const std::string &value
          }
       }
    }
+   else if (key == "hdr_ctrl")
+   {
+      unsigned char hdrEn;
+      if (value == "false") hdrEn = 0;
+      else                  hdrEn = 1;
+      if (device.hwVer == SDRPLAY_RSPdx_ID)
+      {
+         deviceParams->devParams->rspDxParams.hdrEnable = hdrEn;
+         SoapySDR_logf(SOAPY_SDR_INFO, "--> rspDxParams.hdrEnable=%d", deviceParams->devParams->rspDxParams.hdrEnable);
+         if (streamActive)
+         {
+            sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_None, sdrplay_api_Update_RspDx_HdrEnable);
+         }
+      }
+   }
 }
 
 std::string SoapySDRPlay::readSetting(const std::string &key) const
@@ -1668,6 +1696,13 @@ std::string SoapySDRPlay::readSetting(const std::string &key) const
        else if (device.hwVer == SDRPLAY_RSPdx_ID) dabNotchEn = deviceParams->devParams->rspDxParams.rfDabNotchEnable;
        if (dabNotchEn == 0) return "false";
        else                 return "true";
+    }
+    else if (key == "hdr_ctrl")
+    {
+       unsigned char hdrEn = 0;
+       if (device.hwVer == SDRPLAY_RSPdx_ID) hdrEn = deviceParams->devParams->rspDxParams.hdrEnable;
+       if (hdrEn == 0) return "false";
+       else            return "true";
     }
 
     // SoapySDR_logf(SOAPY_SDR_WARNING, "Unknown setting '%s'", key.c_str());
