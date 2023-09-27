@@ -1,3 +1,9 @@
+Release 0.8.5 (2023-09-09)
+==========================
+
+- Imported latest changes from the original code repository.
+- Added High Dynamic Resolution (HDR) option, available on RSPdx.
+
 Release 0.8.4 (2023-07-07)
 ==========================
 

@@ -101,7 +101,11 @@ SoapySDRPlay::~SoapySDRPlay(void)
     SoapySDRPlay_getClaimedSerials().erase(cacheKey);
     std::lock_guard <std::mutex> lock(_general_state_mutex);
 
-    releaseDevice();
+    try {
+        releaseDevice();
+    } catch(...) {
+        // Ignore exceptions, we are exiting
+    }
 
     _streams[0] = 0;
     _streams[1] = 0;
