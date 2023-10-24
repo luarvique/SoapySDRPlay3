@@ -12,13 +12,13 @@ Package: soapysdr0.8-module-sdrplay3
 Architecture: any
 Multi-Arch: same
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: Soapy SDRPlay3 - SDRlay device APIv3 support for Soapy SDR.
+Description: Soapy SDRPlay3 - SDRPlay device APIv3 support for Soapy SDR.
  A Soapy module that supports SDRPlay APIv3 devices within the Soapy API.
 
 Package: soapysdr-module-sdrplay3
 Architecture: all
 Depends: soapysdr0.8-module-sdrplay3, ${misc:Depends}
-Description: Soapy SDRPlay3 - SDRlay device APIv3 support for Soapy SDR.
+Description: Soapy SDRPlay3 - SDRPlay device APIv3 support for Soapy SDR.
  A Soapy module that supports SDRPlay APIv3 devices within the Soapy API.
  .
  This is an empty dependency package that pulls in the SDRPlay3 module
