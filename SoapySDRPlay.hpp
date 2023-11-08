@@ -268,8 +268,6 @@ private:
 
     static double getBwValueFromEnum(sdrplay_api_Bw_MHzT bwEnum);
 
-    static bool hdrSupported(uint32_t frequency);
-
     void selectDevice(const std::string &serial, const std::string &mode, const std::string &antenna);
 
     void selectDevice();
@@ -284,6 +282,8 @@ private:
     void waitForDevice(int msec);
 
     sdrplay_api_ErrT tryUpdate(sdrplay_api_ReasonForUpdateT reasonForUpdate);
+
+    bool hdrSupported(uint32_t frequency);
 
 #ifdef SHOW_SERIAL_NUMBER_IN_MESSAGES
     void SoapySDR_log(const SoapySDRLogLevel logLevel, const char *message) const;
