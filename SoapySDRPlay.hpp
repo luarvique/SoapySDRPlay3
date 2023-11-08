@@ -307,7 +307,6 @@ private:
 
     //cached settings
     std::atomic_ulong bufferLength;
-    std::atomic_bool useHdr;
 
     //numBuffers, bufferElems, elementsPerSample
     //are indeed constants

@@ -86,7 +86,6 @@ SoapySDRPlay::SoapySDRPlay(const SoapySDR::Kwargs &args)
     _streamsRefCount[0] = 0;
     _streamsRefCount[1] = 0;
     useShort = true;
-    useHdr = false;
 
     streamActive = false;
 
@@ -1636,10 +1635,13 @@ void SoapySDRPlay::writeSetting(const std::string &key, const std::string &value
    }
    else if (key == "hdr_ctrl")
    {
-      useHdr = (value != "false");
+      unsigned char hdrEn;
+      if (value == "false") hdrEn = 0;
+      else                  hdrEn = 1;
       if (device.hwVer == SDRPLAY_RSPdx_ID)
       {
-         deviceParams->devParams->rspDxParams.hdrEnable = useHdr? 1:0;
+         if (!hdrSupported(chParams->tunerParams.rfFreq.rfHz)) hdrEn = 0;
+         deviceParams->devParams->rspDxParams.hdrEnable = hdrEn;
          SoapySDR_logf(SOAPY_SDR_INFO, "--> rspDxParams.hdrEnable=%d", deviceParams->devParams->rspDxParams.hdrEnable);
          if (streamActive)
          {
