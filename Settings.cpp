@@ -86,6 +86,7 @@ SoapySDRPlay::SoapySDRPlay(const SoapySDR::Kwargs &args)
     _streamsRefCount[0] = 0;
     _streamsRefCount[1] = 0;
     useShort = true;
+    useHdr = false;
 
     streamActive = false;
 
@@ -1050,6 +1051,28 @@ double SoapySDRPlay::getBwValueFromEnum(sdrplay_api_Bw_MHzT bwEnum)
    else return 0;
 }
 
+bool SoapySDRPlay::hdrSupported(uint32_t frequency)
+{
+   // Only RSPdx supports HDR mode
+   if (device.hwVer != SDRPLAY_RSPdx_ID) return false;
+
+   // HDR mode is only supported on certain frequencies
+   switch (frequency)
+   {
+       // 500kHz low-pass filter
+       case 135000: case 175000: case 220000: case 250000:
+       case 340000: case 475000:
+           return true;
+
+       // 2MHz low-pass filter
+       case 516000: case 875000: case 1125000: case 1900000:
+           return true;
+   }
+
+   // Not supported at this frequency
+   return false;
+}
+
 /*******************************************************************
 * Settings API
 ******************************************************************/
@@ -1613,12 +1636,10 @@ void SoapySDRPlay::writeSetting(const std::string &key, const std::string &value
    }
    else if (key == "hdr_ctrl")
    {
-      unsigned char hdrEn;
-      if (value == "false") hdrEn = 0;
-      else                  hdrEn = 1;
+      useHdr = (value != "false");
       if (device.hwVer == SDRPLAY_RSPdx_ID)
       {
-         deviceParams->devParams->rspDxParams.hdrEnable = hdrEn;
+         deviceParams->devParams->rspDxParams.hdrEnable = useHdr? 1:0;
          SoapySDR_logf(SOAPY_SDR_INFO, "--> rspDxParams.hdrEnable=%d", deviceParams->devParams->rspDxParams.hdrEnable);
          if (streamActive)
          {

@@ -268,6 +268,8 @@ private:
 
     static double getBwValueFromEnum(sdrplay_api_Bw_MHzT bwEnum);
 
+    static bool hdrSupported(uint32_t frequency);
+
     void selectDevice(const std::string &serial, const std::string &mode, const std::string &antenna);
 
     void selectDevice();
@@ -305,6 +307,7 @@ private:
 
     //cached settings
     std::atomic_ulong bufferLength;
+    std::atomic_bool useHdr;
 
     //numBuffers, bufferElems, elementsPerSample
     //are indeed constants
@@ -338,7 +341,7 @@ public:
    /*******************************************************************
     * Public variables
     ******************************************************************/
-    
+
     mutable std::mutex _general_state_mutex;
 
     class SoapySDRPlayStream
