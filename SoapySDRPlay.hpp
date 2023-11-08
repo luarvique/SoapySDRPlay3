@@ -283,7 +283,7 @@ private:
 
     sdrplay_api_ErrT tryUpdate(sdrplay_api_ReasonForUpdateT reasonForUpdate);
 
-    bool hdrSupported(uint32_t frequency);
+    bool tryHdr(uint32_t frequency = 0, uint32_t bandwidth = 0);
 
 #ifdef SHOW_SERIAL_NUMBER_IN_MESSAGES
     void SoapySDR_log(const SoapySDRLogLevel logLevel, const char *message) const;
@@ -319,6 +319,8 @@ private:
     std::atomic_bool streamActive;
 
     std::atomic_bool useShort;
+
+    std::atomic_bool useHdr;
 
     const int uninitRetryDelay = 10;   // 10 seconds before trying uninit again 
 

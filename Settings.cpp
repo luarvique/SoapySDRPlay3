@@ -87,6 +87,8 @@ SoapySDRPlay::SoapySDRPlay(const SoapySDR::Kwargs &args)
     _streamsRefCount[1] = 0;
     useShort = true;
 
+    useHdr = false;
+
     streamActive = false;
 
     device_unavailable = false;
@@ -658,6 +660,9 @@ void SoapySDRPlay::setFrequency(const int direction,
             {
                SoapySDR_log(SOAPY_SDR_WARNING, "RF center frequency update timeout.");
             }
+
+            // Try enabling HDR mode, if applicable
+            tryHdr();
          }
       }
       // can't set ppm for RSPduo slaves
@@ -822,6 +827,9 @@ void SoapySDRPlay::setSampleRate(const int direction, const size_t channel, cons
                    SoapySDR_log(SOAPY_SDR_WARNING, "Sample rate update timeout.");
                 }
              }
+
+            // Try enabling HDR mode, if applicable
+            tryHdr();
           }
        }
     }
@@ -977,6 +985,9 @@ void SoapySDRPlay::setBandwidth(const int direction, const size_t channel, const
          if (streamActive)
          {
             sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_Tuner_BwType, sdrplay_api_Update_Ext1_None);
+
+            // Try enabling HDR mode, if applicable
+            tryHdr();
          }
       }
    }
@@ -984,7 +995,7 @@ void SoapySDRPlay::setBandwidth(const int direction, const size_t channel, const
 
 double SoapySDRPlay::getBandwidth(const int direction, const size_t channel) const
 {
-    std::lock_guard <std::mutex> lock(_general_state_mutex);
+   std::lock_guard <std::mutex> lock(_general_state_mutex);
 
    if (direction == SOAPY_SDR_RX)
    {
@@ -1050,10 +1061,14 @@ double SoapySDRPlay::getBwValueFromEnum(sdrplay_api_Bw_MHzT bwEnum)
    else return 0;
 }
 
-bool SoapySDRPlay::hdrSupported(uint32_t frequency)
+bool SoapySDRPlay::tryHdr(uint32_t frequency, uint32_t bandwidth)
 {
    // Only RSPdx supports HDR mode
    if (device.hwVer != SDRPLAY_RSPdx_ID) return false;
+
+   // Use current frequency / bandwidth if not given
+   if (!frequency) frequency = chParams->tunerParams.rfFreq.rfHz;
+   if (!bandwidth) bandwidth = getBwValueFromEnum(chParams->tunerParams.bwType);
 
    // HDR mode is only supported on certain frequencies
    switch (frequency)
@@ -1061,15 +1076,40 @@ bool SoapySDRPlay::hdrSupported(uint32_t frequency)
        // 500kHz low-pass filter
        case 135000: case 175000: case 220000: case 250000:
        case 340000: case 475000:
-           return true;
+           deviceParams->devParams->rspDxParams.hdrEnable = useHdr? 1:0;
+           break;
 
        // 2MHz low-pass filter
        case 516000: case 875000: case 1125000: case 1900000:
-           return true;
+           deviceParams->devParams->rspDxParams.hdrEnable = useHdr? 1:0;
+           break;
+
+       // HDR not supported
+       default:
+           deviceParams->devParams->rspDxParams.hdrEnable = 0;
+           break;
    }
 
-   // Not supported at this frequency
-   return false;
+   // Choose the best filter
+   chParams->rspDxTunerParams.hdrBw =
+       bandwidth<=200?  sdrplay_api_RspDx_HDRMODE_BW_0_200
+     : bandwidth<=500?  sdrplay_api_RspDx_HDRMODE_BW_0_500
+     : bandwidth<=1200? sdrplay_api_RspDx_HDRMODE_BW_1_200
+     : sdrplay_api_RspDx_HDRMODE_BW_1_700;
+
+   SoapySDR_logf(SOAPY_SDR_INFO, "--> rspDxParams.hdrEnable=%d", deviceParams->devParams->rspDxParams.hdrEnable);
+   SoapySDR_logf(SOAPY_SDR_INFO, "--> rspDxParams.hdrBw=%d", chParams->rspDxTunerParams.hdrBw);
+
+   // Send changes to the hardware
+   if (streamActive)
+       sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_None,
+           (sdrplay_api_ReasonForUpdateExtension1T) (
+               sdrplay_api_Update_RspDx_HdrEnable
+             | sdrplay_api_Update_RspDx_HdrBw
+       ));
+
+   // Done
+   return !!deviceParams->devParams->rspDxParams.hdrEnable;
 }
 
 /*******************************************************************
@@ -1635,19 +1675,11 @@ void SoapySDRPlay::writeSetting(const std::string &key, const std::string &value
    }
    else if (key == "hdr_ctrl")
    {
-      unsigned char hdrEn;
-      if (value == "false") hdrEn = 0;
-      else                  hdrEn = 1;
-      if (device.hwVer == SDRPLAY_RSPdx_ID)
-      {
-         if (!hdrSupported(chParams->tunerParams.rfFreq.rfHz)) hdrEn = 0;
-         deviceParams->devParams->rspDxParams.hdrEnable = hdrEn;
-         SoapySDR_logf(SOAPY_SDR_INFO, "--> rspDxParams.hdrEnable=%d", deviceParams->devParams->rspDxParams.hdrEnable);
-         if (streamActive)
-         {
-            sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_None, sdrplay_api_Update_RspDx_HdrEnable);
-         }
-      }
+      useHdr = (value != "false");
+      tryHdr(
+          chParams->tunerParams.rfFreq.rfHz,
+          getBwValueFromEnum(chParams->tunerParams.bwType)
+      );
    }
 }
 
