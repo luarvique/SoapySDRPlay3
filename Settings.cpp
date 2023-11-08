@@ -1097,8 +1097,11 @@ bool SoapySDRPlay::tryHdr(uint32_t frequency, uint32_t bandwidth)
      : bandwidth<=1200? sdrplay_api_RspDx_HDRMODE_BW_1_200
      : sdrplay_api_RspDx_HDRMODE_BW_1_700;
 
-   SoapySDR_logf(SOAPY_SDR_INFO, "--> rspDxParams.hdrEnable=%d", deviceParams->devParams->rspDxParams.hdrEnable);
-   SoapySDR_logf(SOAPY_SDR_INFO, "--> rspDxParams.hdrBw=%d", chParams->rspDxTunerParams.hdrBw);
+   SoapySDR_logf(SOAPY_SDR_INFO, "tryHdr(f=%d, bw=%d)--> enable=%d, bw=%d",
+       frequency, bandwidth,
+       deviceParams->devParams->rspDxParams.hdrEnable,
+       chParams->rspDxTunerParams.hdrBw
+   );
 
    // Send changes to the hardware
    if (streamActive)
