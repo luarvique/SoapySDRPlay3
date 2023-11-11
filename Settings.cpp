@@ -1061,14 +1061,19 @@ double SoapySDRPlay::getBwValueFromEnum(sdrplay_api_Bw_MHzT bwEnum)
    else return 0;
 }
 
-bool SoapySDRPlay::tryHdr(uint32_t frequency, uint32_t bandwidth)
+sdrplay_api_ErrT SoapySDRPlay::tryHdr(uint32_t frequency, uint32_t bandwidth)
 {
    // Only RSPdx supports HDR mode
-   if (device.hwVer != SDRPLAY_RSPdx_ID) return false;
+   if (device.hwVer != SDRPLAY_RSPdx_ID) return sdrplay_api_Fail;
 
    // Use current frequency / bandwidth if not given
    if (!frequency) frequency = chParams->tunerParams.rfFreq.rfHz;
    if (!bandwidth) bandwidth = getBwValueFromEnum(chParams->tunerParams.bwType);
+
+   // Start with current settings
+   unsigned char hdrEnable = deviceParams->devParams->rspDxParams.hdrEnable;
+   sdrplay_api_RspDx_HdrModeBwT hdrBw = chParams->rspDxTunerParams.hdrBw;
+   sdrplay_api_ReasonForUpdateExtension1T changes = sdrplay_api_Update_Ext1_None;
 
    // HDR mode is only supported on certain frequencies
    switch (frequency)
@@ -1076,43 +1081,55 @@ bool SoapySDRPlay::tryHdr(uint32_t frequency, uint32_t bandwidth)
        // 500kHz low-pass filter
        case 135000: case 175000: case 220000: case 250000:
        case 340000: case 475000:
-           deviceParams->devParams->rspDxParams.hdrEnable = useHdr? 1:0;
+           hdrEnable = useHdr? 1:0;
            break;
 
        // 2MHz low-pass filter
        case 516000: case 875000: case 1125000: case 1900000:
-           deviceParams->devParams->rspDxParams.hdrEnable = useHdr? 1:0;
+           hdrEnable = useHdr? 1:0;
            break;
 
        // HDR not supported
        default:
-           deviceParams->devParams->rspDxParams.hdrEnable = 0;
+           hdrEnable = 0;
            break;
    }
 
    // Choose the best filter
-   chParams->rspDxTunerParams.hdrBw =
-       bandwidth<=200?  sdrplay_api_RspDx_HDRMODE_BW_0_200
-     : bandwidth<=500?  sdrplay_api_RspDx_HDRMODE_BW_0_500
-     : bandwidth<=1200? sdrplay_api_RspDx_HDRMODE_BW_1_200
-     : sdrplay_api_RspDx_HDRMODE_BW_1_700;
+   if (hdrEnable)
+   {
+       hdrBw =
+           bandwidth<=200?  sdrplay_api_RspDx_HDRMODE_BW_0_200
+         : bandwidth<=500?  sdrplay_api_RspDx_HDRMODE_BW_0_500
+         : bandwidth<=1200? sdrplay_api_RspDx_HDRMODE_BW_1_200
+         : sdrplay_api_RspDx_HDRMODE_BW_1_700;
+   }
 
-   SoapySDR_logf(SOAPY_SDR_INFO, "tryHdr(f=%d, bw=%d)--> enable=%d, bw=%d",
-       frequency, bandwidth,
-       deviceParams->devParams->rspDxParams.hdrEnable,
-       chParams->rspDxTunerParams.hdrBw
-   );
+   if (hdrEnable!=deviceParams->devParams->rspDxParams.hdrEnable)
+   {
+       deviceParams->devParams->rspDxParams.hdrEnable = hdrEnable;
+       changes = (sdrplay_api_ReasonForUpdateExtension1T)
+           (changes | sdrplay_api_Update_RspDx_HdrEnable);
+   }
 
-   // Send changes to the hardware
-   if (streamActive)
-       sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_None,
-           (sdrplay_api_ReasonForUpdateExtension1T) (
-               sdrplay_api_Update_RspDx_HdrEnable
-             | sdrplay_api_Update_RspDx_HdrBw
-       ));
+   if (hdrBw!=chParams->rspDxTunerParams.hdrBw)
+   {
+       chParams->rspDxTunerParams.hdrBw = hdrBw;
+       changes = (sdrplay_api_ReasonForUpdateExtension1T)
+           (changes | sdrplay_api_Update_RspDx_HdrBw);
+   }
 
-   // Done
-   return !!deviceParams->devParams->rspDxParams.hdrEnable;
+   // If no changes, drop out
+   if (!changes) return sdrplay_api_Success;
+   else
+   {
+       SoapySDR_logf(SOAPY_SDR_INFO, "tryHdr(f=%d, bw=%d)--> enable=%d, bw=%d",
+           frequency, bandwidth, hdrEnable, hdrBw
+       );
+
+       // Apply changes and return result
+       return sdrplay_api_Update(device.dev, device.tuner, sdrplay_api_Update_None, changes);
+   }
 }
 
 /*******************************************************************
@@ -1679,10 +1696,7 @@ void SoapySDRPlay::writeSetting(const std::string &key, const std::string &value
    else if (key == "hdr_ctrl")
    {
       useHdr = (value != "false");
-      tryHdr(
-          chParams->tunerParams.rfFreq.rfHz,
-          getBwValueFromEnum(chParams->tunerParams.bwType)
-      );
+      if (streamActive) tryHdr();
    }
 }
 

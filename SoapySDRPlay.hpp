@@ -281,9 +281,12 @@ private:
 
     void waitForDevice(int msec);
 
+    // Try sending updates to the SDRPlay API, retrying as necessary
     sdrplay_api_ErrT tryUpdate(sdrplay_api_ReasonForUpdateT reasonForUpdate);
 
-    bool tryHdr(uint32_t frequency = 0, uint32_t bandwidth = 0);
+    // Update SDRPlay API control structures with new HDR settings,
+    // if applicable. Use current frequency/bandwidth if not supplied.
+    sdrplay_api_ErrT tryHdr(uint32_t frequency = 0, uint32_t bandwidth = 0);
 
 #ifdef SHOW_SERIAL_NUMBER_IN_MESSAGES
     void SoapySDR_log(const SoapySDRLogLevel logLevel, const char *message) const;
