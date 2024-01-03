@@ -1,3 +1,10 @@
+Release 0.8.7 (2024-01-03)
+==========================
+
+- Only enabling HDR for center frequencies where it works.
+- Rebuilt 64bit packages with SDRPlay API v3.12.
+- PLEASE, UPGRADE YOUR SDRPlay API FROM https://www.sdrplay.com/api/
+
 Release 0.8.6 (2023-10-12)
 ==========================
 
