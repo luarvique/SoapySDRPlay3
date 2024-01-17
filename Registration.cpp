@@ -46,7 +46,7 @@ static std::vector<SoapySDR::Kwargs> findSDRPlay(const SoapySDR::Kwargs &args)
    SoapySDRPlay::sdrplay_api::get_instance();
    sdrplay_api_LockDeviceApi();
    sdrplay_api_DeviceT rspDevs[SDRPLAY_MAX_DEVICES];
-   sdrplay_api_GetDevices(&rspDevs[0], &nDevs, SDRPLAY_MAX_DEVICES);
+   SoapySDRPlay::sdrplay_api::get_devices(&rspDevs[0], &nDevs, SDRPLAY_MAX_DEVICES);
 
    for (unsigned int i = 0; i < nDevs; i++)
    {

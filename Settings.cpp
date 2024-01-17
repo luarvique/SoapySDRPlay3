@@ -1913,7 +1913,7 @@ void SoapySDRPlay::selectDevice(sdrplay_api_TunerSelectT tuner,
 
     sdrplay_api_LockDeviceApi();
     sdrplay_api_DeviceT rspDevs[SDRPLAY_MAX_DEVICES];
-    sdrplay_api_GetDevices(&rspDevs[0], &nDevs, SDRPLAY_MAX_DEVICES);
+    SoapySDRPlay::sdrplay_api::get_devices(&rspDevs[0], &nDevs, SDRPLAY_MAX_DEVICES);
 
     unsigned devIdx = SDRPLAY_MAX_DEVICES;
     for (unsigned int i = 0; i < nDevs; i++)

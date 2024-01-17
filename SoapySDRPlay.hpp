@@ -47,6 +47,7 @@
 #define DEFAULT_ELEMS_PER_SAMPLE  (2)
 
 std::set<std::string> &SoapySDRPlay_getClaimedSerials(void);
+sdrplay_api_ErrT SoapySDRPlay_getDevices(sdrplay_api_DeviceT *devices, unsigned int *numDevs, unsigned int maxDevs);
 
 class SoapySDRPlay: public SoapySDR::Device
 {
@@ -393,6 +394,8 @@ public:
         {
             return ver;
         }
+
+        static sdrplay_api_ErrT get_devices(sdrplay_api_DeviceT *devices, unsigned int *numDevs, unsigned int maxDevs);
 
     private:
         static float ver;

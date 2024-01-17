@@ -23,6 +23,8 @@
  */
 
 #include "SoapySDRPlay.hpp"
+#include <strings.h>
+#include <stdio.h>
 
 float SoapySDRPlay::sdrplay_api::ver = 0.0;
 
@@ -58,4 +60,25 @@ SoapySDRPlay::sdrplay_api::~sdrplay_api()
     if (err != sdrplay_api_Success) {
         ::SoapySDR_logf(SOAPY_SDR_ERROR, "sdrplay_api_Close() failed: %s", sdrplay_api_GetErrorString(err));
     }
+}
+
+sdrplay_api_ErrT SoapySDRPlay::sdrplay_api::get_devices(sdrplay_api_DeviceT *devices, unsigned int *numDevs, unsigned int maxDevs)
+{
+    unsigned int i, j;
+
+    // Run API function
+    sdrplay_api_ErrT err = sdrplay_api_GetDevices(devices, numDevs, maxDevs);
+    if (err != sdrplay_api_Success) return err;
+
+    // Rename duplicated devices with fake serial numbers
+    for (i = j = 0; i < *numDevs; i++) {
+        if (!strcmp(devices[i].SerNo, "0000000001")) {
+            if (j++ > 0) {
+                sprintf(devices[i].SerNo, "%010d", j);
+            }
+        }
+    }
+
+    // Done
+    return err;
 }
