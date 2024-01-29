@@ -4,7 +4,7 @@
  * Copyright (c) 2015 Charles J. Cliffe
  * Copyright (c) 2020 Franco Venturi - changes for SDRplay API version 3
  *                                     and Dual Tuner for RSPduo
- * Copyright (c) 2022 Marat Fayzullin - stability fixes
+ * Copyright (c) 2024 Marat Fayzullin - stability fixes
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,7 @@ static std::vector<SoapySDR::Kwargs> findSDRPlay(const SoapySDR::Kwargs &args)
 
    for (unsigned int i = 0; i < nDevs; i++)
    {
+      if (not rspDevs[i].valid) continue;
       SoapySDR::Kwargs dev;
       dev["serial"] = rspDevs[i].SerNo;
       const bool serialMatch = args.count("serial") == 0 or args.at("serial") == dev["serial"];
@@ -62,6 +63,10 @@ static std::vector<SoapySDR::Kwargs> findSDRPlay(const SoapySDR::Kwargs &args)
       else if (rspDevs[i].hwVer == SDRPLAY_RSP1A_ID)
       {
          modelName = "RSP1A";
+      }
+      else if (rspDevs[i].hwVer == SDRPLAY_RSP1B_ID)
+      {
+         modelName = "RSP1B";
       }
       else if (rspDevs[i].hwVer == SDRPLAY_RSP2_ID)
       {
