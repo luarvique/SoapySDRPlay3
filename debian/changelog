@@ -1,3 +1,11 @@
+soapysdrplay3 (0.8.8) stable; urgency=low
+
+  * Added support for RSP1B devices from Franco.
+  * Rebuilt 64bit packages with SDRPlay API v3.14.
+  * PLEASE, UPGRADE YOUR SDRPlay API FROM https://www.sdrplay.com/api/
+
+ -- Marat Fayzullin <luarvique@gmail.com>  Fri, 2 Feb 2024 12:18:02 -0000
+
 soapysdrplay3 (0.8.7) stable; urgency=low
 
   * Only enabling HDR for center frequencies where it works.
