@@ -42,6 +42,14 @@
 
 #include <sdrplay_api.h>
 
+// Make sure we can work with the older SDRPlay API headers
+#if !defined(SDRPLAY_RSP1B_ID)
+#define SDRPLAY_RSP1B_ID SDRPLAY_RSP1A_ID
+#endif
+#if !defined(SDRPLAY_RSPdxR2_ID)
+#define SDRPLAY_RSPdxR2_ID SDRPLAY_RSPdx_ID
+#endif
+
 #define DEFAULT_BUFFER_LENGTH     (65536)
 #define DEFAULT_NUM_BUFFERS       (8)
 #define DEFAULT_ELEMS_PER_SAMPLE  (2)

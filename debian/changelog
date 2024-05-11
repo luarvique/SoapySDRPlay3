@@ -1,3 +1,13 @@
+soapysdrplay3 (0.8.9) stable; urgency=low
+
+  * Added support for RSPdxR2 devices from Franco.
+  * Added backward compatibility with API v3.07.
+  * Rebuilt 64bit packages with SDRPlay API v3.15.
+  * Rebuilt 32bit packages with SDRPlay API v3.07.
+  * PLEASE, UPGRADE YOUR SDRPlay API FROM https://www.sdrplay.com/api/
+
+ -- Marat Fayzullin <luarvique@gmail.com>  Mon, 13 May 2024 12:18:02 -0000
+
 soapysdrplay3 (0.8.8) stable; urgency=low
 
   * Added support for RSP1B devices from Franco.
