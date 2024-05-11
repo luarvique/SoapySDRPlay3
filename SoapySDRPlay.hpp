@@ -44,10 +44,10 @@
 
 // Make sure we can work with the older SDRPlay API headers
 #if !defined(SDRPLAY_RSP1B_ID)
-#define SDRPLAY_RSP1B_ID SDRPLAY_RSP1A_ID
+#define SDRPLAY_RSP1B_ID (6)
 #endif
 #if !defined(SDRPLAY_RSPdxR2_ID)
-#define SDRPLAY_RSPdxR2_ID SDRPLAY_RSPdx_ID
+#define SDRPLAY_RSPdxR2_ID (7)
 #endif
 
 #define DEFAULT_BUFFER_LENGTH     (65536)
