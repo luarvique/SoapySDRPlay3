@@ -50,7 +50,9 @@ static std::vector<SoapySDR::Kwargs> findSDRPlay(const SoapySDR::Kwargs &args)
 
    for (unsigned int i = 0; i < nDevs; i++)
    {
+#if defined(NEW_API)
       if (not rspDevs[i].valid) continue;
+#endif
       SoapySDR::Kwargs dev;
       dev["serial"] = rspDevs[i].SerNo;
       const bool serialMatch = args.count("serial") == 0 or args.at("serial") == dev["serial"];

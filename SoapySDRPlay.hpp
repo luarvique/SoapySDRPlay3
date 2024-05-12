@@ -45,6 +45,8 @@
 // Make sure we can work with the older SDRPlay API headers
 #if !defined(SDRPLAY_RSP1B_ID)
 #define SDRPLAY_RSP1B_ID (6)
+#else
+#define NEW_API
 #endif
 #if !defined(SDRPLAY_RSPdxR2_ID)
 #define SDRPLAY_RSPdxR2_ID (7)
