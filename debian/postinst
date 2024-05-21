@@ -16,7 +16,12 @@ if [ -d /usr/local/lib/SoapySDR ]; then
   case "$answer" in
   y*|y*)
     echo "Deleting locally installed SoapySDR from /usr/local ..."
-    find /usr/local -name \*SoapySDR\* | xargs -n 1 rm -rf
+    # But keeping /usr/local/lib/SoapySDR folder since it may contain modules
+    find /usr/local/share -name \*SoapySDR\* | xargs -n 1 rm -rf
+    find /usr/local/include -name \*SoapySDR\* | xargs -n 1 rm -rf
+    find /usr/local/bin -name \*SoapySDR\* | xargs -n 1 rm -rf
+    find /usr/local/lib -name \*SoapySDR.\* | xargs -n 1 rm -rf
+    find /usr/local/lib -name libsdrPlaySupport.so | xargs -n 1 rm -rf
     echo "DONE."
   ;;
   esac
