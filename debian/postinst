@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ -d /usr/local/lib/SoapySDR ]; then
+if [ -d /usr/local/share/SoapySDR ]; then
   echo "################# DELETE LOCAL SOAPYSDR BUILD #################"
   echo "#####                                                     #####"
   echo "##### If you happen to have locally built SoapySDR in the #####"
