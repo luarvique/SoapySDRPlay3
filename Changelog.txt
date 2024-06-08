@@ -1,3 +1,10 @@
+Release 0.8.10 (2024-06-10)
+==========================
+
+- Fixed installation to preserve locally built Soapy modules.
+- Rebuilt 64bit AND 32bit packages with latest SDRPlay API v3.15.2.
+- PLEASE, UPGRADE YOUR SDRPlay API FROM https://www.sdrplay.com/api/
+
 Release 0.8.9 (2024-05-13)
 ==========================
 

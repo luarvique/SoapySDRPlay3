@@ -1,3 +1,11 @@
+soapysdrplay3 (0.8.10) stable; urgency=low
+
+  * Fixed installation to preserve locally built Soapy modules.
+  * Rebuilt 64bit AND 32bit packages with latest SDRPlay API v3.15.2.
+  * PLEASE, UPGRADE YOUR SDRPlay API FROM https://www.sdrplay.com/api/
+
+ -- Marat Fayzullin <luarvique@gmail.com>  Mon, 10 Jun 2024 12:18:02 -0000
+
 soapysdrplay3 (0.8.9) stable; urgency=low
 
   * Added support for RSPdxR2 devices from Franco.
