@@ -1,0 +1,22 @@
+#!/bin/sh
+
+VERSION=3.15
+
+if [ ! -f /usr/local/lib/libsdrplay_api.so.${VERSION} ]; then
+  echo "##### PLEASE, INSTALL SDRPLAY API VERSION ${VERSION}! ###########"
+  echo "#####                                                 #####"
+  echo "##### This package will not work without SDRPlay API  #####"
+  echo "##### drivers, which have to be installed separately. #####"
+  echo "##### Please, download and install version ${VERSION} of    #####"
+  echo "##### these API drivers from                          #####"
+  echo "#####                                                 #####"
+  echo "#####     https://www.sdrplay.com/downloads/          #####"
+  echo "#####                                                 #####"
+  echo "###########################################################"
+  # Throw an error code, since SoapySDRPlay3 will not work without API
+  exit 1
+fi
+
+# We are ok
+echo "Found required SDRPlay API version ${VERSION}."
+exit 0
