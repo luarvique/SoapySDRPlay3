@@ -1672,7 +1672,21 @@ void SoapySDRPlay::writeSetting(const std::string &key, const std::string &value
 #ifdef RF_GAIN_IN_MENU
    if (key == "rfgain_sel")
    {
-      chParams->tunerParams.gain.LNAstate = static_cast<unsigned char>(stoul(value));
+      SoapySDR::Range gainRange = getGainRange(0, 0, "RFGR");
+      double v = static_cast<unsigned char>(stoul(value));
+      if (v < gainRange.minimum())
+      {
+         SoapySDR_logf(SOAPY_SDR_WARNING, "Gain reduction out of range: %lg < %lg", v, gainRange.minimum());
+         v = gainRange.minimum();
+      }
+      else if (v > gainRange.maximum())
+      {
+         SoapySDR_logf(SOAPY_SDR_WARNING, "Gain reduction out of range: %lg > %lg", v, gainRange.maximum());
+         v = gainRange.maximum();
+      }
+
+      chParams->tunerParams.gain.LNAstate = (int)v;
+
       if (streamActive)
       {
          gr_changed = 0;
