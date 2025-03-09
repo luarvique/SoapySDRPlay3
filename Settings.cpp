@@ -557,21 +557,34 @@ void SoapySDRPlay::setGain(const int direction, const size_t channel, const std:
    std::lock_guard <std::mutex> lock(_general_state_mutex);
 
    bool doUpdate = false;
+   double v = value;
+
+   SoapySDR::Range gainRange = getGainRange(direction, channel, name);
+   if (v < gainRange.minimum())
+   {
+      SoapySDR_logf(SOAPY_SDR_WARNING, "%s gain out of range - gain=%lg < %lg", name, v, gainRange.minimum());
+      v = gainRange.minimum();
+   }
+   else if (v > gainRange.maximum())
+   {
+      SoapySDR_logf(SOAPY_SDR_WARNING, "%s gain out of range - gain=%lg > %lg", name, v, gainRange.maximum());
+      v = gainRange.maximum();
+   }
 
    if (name == "IFGR")
    {
       //apply the change if the required value is different from gRdB
-      if (chParams->tunerParams.gain.gRdB != (int)value)
+      if (chParams->tunerParams.gain.gRdB != (int)v)
       {
-          chParams->tunerParams.gain.gRdB = (int)value;
+          chParams->tunerParams.gain.gRdB = (int)v;
           doUpdate = true;
       }
    }
    else if (name == "RFGR")
    {
-      if (chParams->tunerParams.gain.LNAstate != (int)value)
+      if (chParams->tunerParams.gain.LNAstate != (int)v)
       {
-          chParams->tunerParams.gain.LNAstate = (int)value;
+          chParams->tunerParams.gain.LNAstate = (int)v;
           doUpdate = true;
       }
    }
@@ -658,7 +671,9 @@ SoapySDR::Range SoapySDRPlay::getGainRange(const int direction, const size_t cha
    {
       return SoapySDR::Range(0, 27);
    }
-    return SoapySDR::Range(20, 59);
+
+   // Assume IFGR
+   return SoapySDR::Range(20, 59);
 }
 
 /*******************************************************************
