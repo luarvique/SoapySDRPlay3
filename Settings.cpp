@@ -1764,8 +1764,8 @@ void SoapySDRPlay::writeSetting(const std::string &key, const std::string &value
    else if (key == "biasT_ctrl")
    {
       unsigned char biasTen;
-      if (value == "false") biasTen = 0;
-      else                  biasTen = 1;
+      if (value == "true") biasTen = 1;
+      else                 biasTen = 0;
       if (device.hwVer == SDRPLAY_RSP2_ID)
       {
          chParams->rsp2TunerParams.biasTEnable = biasTen;
